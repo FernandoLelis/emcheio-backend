@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "cupom" ALTER COLUMN "validade_inicio" SET DATA TYPE TIMESTAMP(3),
+ALTER COLUMN "validade_fim" SET DATA TYPE TIMESTAMP(3);

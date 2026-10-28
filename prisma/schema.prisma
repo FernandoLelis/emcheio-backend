@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// USER (Auth)
+// ============================================
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique @db.VarChar(255)
+  senha     String   @db.VarChar(255)
+  nome      String   @db.VarChar(100)
+  role      Role     @default(USER)
+  criadoEm  DateTime @default(now()) @map("criado_em")
+
+  @@map("user")
+}
+
+// ============================================
+// CATEGORIA
+// ============================================
+model Categoria {
+  id       Int      @id @default(autoincrement())
+  nome     String   @db.VarChar(100)
+  slug     String   @unique @db.VarChar(100)
+  icone    String?  @db.VarChar(50)
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  produtos Produto[]
+
+  @@map("categoria")
+}
+
+// ============================================
+// PRODUTO
+// ============================================
+model Produto {
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(255)
+  slug         String   @unique @db.VarChar(255)
+  descricao    String?
+  marca        String?  @db.VarChar(100)
+  imagemUrl    String?  @map("imagem_url")
+  categoriaId  Int?     @map("categoria_id")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @default(now()) @updatedAt @map("atualizado_em")
+
+  categoria Categoria? @relation(fields: [categoriaId], references: [id])
+  ofertas   Oferta[]
+
+  @@map("produto")
+}
+
+// ============================================
+// OFERTA
+// ============================================
+model Oferta {
+  id            Int      @id @default(autoincrement())
+  produtoId     Int      @map("produto_id")
+  loja          String   @db.VarChar(50)
+  precoAtual    Decimal  @map("preco_atual") @db.Decimal(10, 2)
+  precoOriginal Decimal? @map("preco_original") @db.Decimal(10, 2)
+  urlAfiliado   String   @map("url_afiliado")
+  disponivel    Boolean  @default(true)
+  destaque      Boolean  @default(false)
+  criadoEm      DateTime @default(now()) @map("criado_em")
+  atualizadoEm  DateTime @default(now()) @updatedAt @map("atualizado_em")
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("oferta")
+}
+
+// ============================================
+// CUPOM
+// ============================================
+model Cupom {
+  id             Int       @id @default(autoincrement())
+  loja           String    @db.VarChar(50)
+  codigo         String    @db.VarChar(50)
+  descricao      String?   @db.VarChar(255)
+  descontoTexto  String?   @map("desconto_texto") @db.VarChar(50)
+  urlAfiliado    String?   @map("url_afiliado")
+  validadeInicio DateTime? @map("validade_inicio")
+  validadeFim    DateTime? @map("validade_fim")
+  destaque       Boolean   @default(false)
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+
+  @@map("cupom")
+}
+
+// ============================================
+// INSCRITO (newsletter + WhatsApp)
+// ============================================
+model Inscrito {
+  id              Int      @id @default(autoincrement())
+  nome            String?  @db.VarChar(100)
+  email           String   @unique @db.VarChar(255)
+  whatsapp        String?  @db.VarChar(20)
+  aceitaEmail     Boolean  @default(true) @map("aceita_email")
+  aceitaWhatsapp  Boolean  @default(false) @map("aceita_whatsapp")
+  criadoEm        DateTime @default(now()) @map("criado_em")
+
+  @@map("inscrito")
+}
