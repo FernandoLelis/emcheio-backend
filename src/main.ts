@@ -1,36 +1,25 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ CORS — permite requisições do frontend
+  // ✅ Configuração de CORS: Permite o ambiente local e o site na Vercel
   app.enableCors({
     origin: [
-      'http://localhost:3001',      // Next.js em desenvolvimento
-      'http://localhost:3000',      // Fallback
-      // Em produção, adicionar:
-      // 'https://emcheio.com.br',
-      // 'https://www.emcheio.com.br',
+      'http://localhost:3001',
+      'https://emcheio.vercel.app'
     ],
-    credentials: true,               // Permite envio de cookies/headers
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
   });
 
-  // ✅ Validação global de DTOs
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  // ✅ Prefixo global para todas as rotas
-  app.setGlobalPrefix('api');
-
-  await app.listen(process.env.PORT ?? 3000);
+  // ✅ Importante para o Render: usa a porta da variável de ambiente ou 3000 como fallback
+  const port = process.env.PORT || 3000;
+  
+  await app.listen(port, '0.0.0.0');
+  
+  console.log(`🚀 Backend rodando na porta ${port}`);
 }
-await bootstrap();
+
+bootstrap();
