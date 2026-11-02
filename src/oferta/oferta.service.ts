@@ -14,21 +14,14 @@ export class OfertaService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // ==========================================
-  // CONVERSOR: Decimal → number
-  // ==========================================
   private converterDecimais(oferta: any) {
     return {
       ...oferta,
       precoAtual: Number(oferta.precoAtual),
-      precoOriginal:
-        oferta.precoOriginal !== null ? Number(oferta.precoOriginal) : null,
+      precoOriginal: oferta.precoOriginal !== null ? Number(oferta.precoOriginal) : null,
     };
   }
 
-  // ==========================================
-  // VALIDAÇÃO: Produto existe?
-  // ==========================================
   private async validarProduto(produtoId: number) {
     const produto = await this.prisma.produto.findUnique({
       where: { id: produtoId },
@@ -39,9 +32,6 @@ export class OfertaService {
     }
   }
 
-  // ==========================================
-  // CREATE
-  // ==========================================
   async create(createOfertaDto: CreateOfertaDto) {
     await this.validarProduto(createOfertaDto.produtoId);
 
@@ -50,28 +40,26 @@ export class OfertaService {
       include: { produto: true },
     });
 
-    this.logger.log(
-      `✅ Oferta criada: ${oferta.loja} - Produto ${oferta.produtoId} (ID: ${oferta.id})`,
-    );
-
+    this.logger.log(`✅ Oferta criada: ${oferta.loja} - Produto ${oferta.produtoId} (ID: ${oferta.id})`);
     return this.converterDecimais(oferta);
   }
 
-  // ==========================================
-  // READ ALL
-  // ==========================================
   async findAll() {
     const ofertas = await this.prisma.oferta.findMany({
       include: { produto: true },
       orderBy: { criadoEm: 'desc' },
     });
-
     return ofertas.map((oferta) => this.converterDecimais(oferta));
   }
 
-  // ==========================================
-  // READ ONE
-  // ==========================================
+  // ✅ NOVO MÉTODO DE CONTAGEM
+  async getContagem() {
+    const total = await this.prisma.oferta.count({
+      where: { disponivel: true },
+    });
+    return { total };
+  }
+
   async findOne(id: number) {
     const oferta = await this.prisma.oferta.findUnique({
       where: { id },
@@ -81,55 +69,35 @@ export class OfertaService {
     if (!oferta) {
       throw new NotFoundException(`Oferta com ID ${id} não encontrada`);
     }
-
     return this.converterDecimais(oferta);
   }
 
-  // ==========================================
-  // READ BY PRODUTO
-  // ==========================================
   async findByProduto(produtoId: number) {
     await this.validarProduto(produtoId);
-
     const ofertas = await this.prisma.oferta.findMany({
       where: { produtoId },
       orderBy: { precoAtual: 'asc' },
     });
-
     return ofertas.map((oferta) => this.converterDecimais(oferta));
   }
 
-  // ==========================================
-  // UPDATE
-  // ==========================================
   async update(id: number, updateOfertaDto: UpdateOfertaDto) {
     await this.findOne(id);
-
     if (updateOfertaDto.produtoId) {
       await this.validarProduto(updateOfertaDto.produtoId);
     }
-
     const oferta = await this.prisma.oferta.update({
       where: { id },
       data: updateOfertaDto,
       include: { produto: true },
     });
-
     this.logger.log(`✏️ Oferta atualizada: ${oferta.loja} (ID: ${oferta.id})`);
-
     return this.converterDecimais(oferta);
   }
 
-  // ==========================================
-  // DELETE
-  // ==========================================
   async remove(id: number) {
     await this.findOne(id);
-
-    const oferta = await this.prisma.oferta.delete({
-      where: { id },
-    });
-
+    const oferta = await this.prisma.oferta.delete({ where: { id } });
     this.logger.log(`🗑️ Oferta removida: ID ${oferta.id}`);
     return { message: `Oferta removida com sucesso` };
   }
