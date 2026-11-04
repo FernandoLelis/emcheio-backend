@@ -40,6 +40,7 @@ model Categoria {
   criadoEm DateTime @default(now()) @map("criado_em")
 
   produtos Produto[]
+  cupons   Cupom[]
 
   @@map("categoria")
 }
@@ -88,16 +89,19 @@ model Oferta {
 // CUPOM
 // ============================================
 model Cupom {
-  id             Int       @id @default(autoincrement())
-  loja           String    @db.VarChar(50)
-  codigo         String    @db.VarChar(50)
-  descricao      String?   @db.VarChar(255)
-  descontoTexto  String?   @map("desconto_texto") @db.VarChar(50)
-  urlAfiliado    String?   @map("url_afiliado")
-  validadeInicio DateTime? @map("validade_inicio")
-  validadeFim    DateTime? @map("validade_fim")
-  destaque       Boolean   @default(false)
-  criadoEm       DateTime  @default(now()) @map("criado_em")
+  id                Int       @id @default(autoincrement())
+  loja              String    @db.VarChar(50)
+  codigo            String    @db.VarChar(50)
+  descricao         String?   @db.VarChar(255)
+  descontoTexto     String?   @map("desconto_texto") @db.VarChar(50)
+  urlAfiliado       String?   @map("url_afiliado")
+  validadeInicio    DateTime? @map("validade_inicio")
+  validadeFim       DateTime? @map("validade_fim")
+  destaque          Boolean   @default(false)
+  aplicarEmTodoSite Boolean   @default(false) @map("aplicar_em_todo_site") // ✅ NOVO
+  criadoEm          DateTime  @default(now()) @map("criado_em")
+  condicoes         String?   @db.Text
+  categorias        Categoria[]
 
   @@map("cupom")
 }

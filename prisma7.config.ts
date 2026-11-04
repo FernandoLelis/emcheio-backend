@@ -1,3 +1,4 @@
+import "dotenv/config"; // ✅ Carrega o .env no ambiente local
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({
@@ -7,8 +8,6 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    // O Render injeta as variáveis de ambiente diretamente no processo.
-    // Não precisamos do dotenv em produção.
     url: process.env["DIRECT_URL"],
   },
 });
