@@ -19,12 +19,12 @@ enum Role {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique @db.VarChar(255)
-  senha     String   @db.VarChar(255)
-  nome      String   @db.VarChar(100)
-  role      Role     @default(USER)
-  criadoEm  DateTime @default(now()) @map("criado_em")
+  id       Int      @id @default(autoincrement())
+  email    String   @unique @db.VarChar(255)
+  senha    String   @db.VarChar(255)
+  nome     String   @db.VarChar(100)
+  role     Role     @default(USER)
+  criadoEm DateTime @default(now()) @map("criado_em")
 
   @@map("user")
 }
@@ -98,10 +98,17 @@ model Cupom {
   validadeInicio    DateTime? @map("validade_inicio")
   validadeFim       DateTime? @map("validade_fim")
   destaque          Boolean   @default(false)
-  aplicarEmTodoSite Boolean   @default(false) @map("aplicar_em_todo_site") // ✅ NOVO
+  aplicarEmTodoSite Boolean   @default(false) @map("aplicar_em_todo_site")
   criadoEm          DateTime  @default(now()) @map("criado_em")
-  condicoes         String?   @db.Text
-  categorias        Categoria[]
+
+  // Campos de condições e novas regras
+  condicoes     String? @db.Text
+  origem        String  @default("manual")
+  valorDesconto Float?  @map("valor_desconto")
+  tipoDesconto  String? @map("tipo_desconto")
+
+  // Relação Muitos-para-Muitos (A linha que estava faltando)
+  categorias Categoria[]
 
   @@map("cupom")
 }
@@ -110,13 +117,13 @@ model Cupom {
 // INSCRITO (newsletter + WhatsApp)
 // ============================================
 model Inscrito {
-  id              Int      @id @default(autoincrement())
-  nome            String?  @db.VarChar(100)
-  email           String   @unique @db.VarChar(255)
-  whatsapp        String?  @db.VarChar(20)
-  aceitaEmail     Boolean  @default(true) @map("aceita_email")
-  aceitaWhatsapp  Boolean  @default(false) @map("aceita_whatsapp")
-  criadoEm        DateTime @default(now()) @map("criado_em")
+  id             Int      @id @default(autoincrement())
+  nome           String?  @db.VarChar(100)
+  email          String   @unique @db.VarChar(255)
+  whatsapp       String?  @db.VarChar(20)
+  aceitaEmail    Boolean  @default(true) @map("aceita_email")
+  aceitaWhatsapp Boolean  @default(false) @map("aceita_whatsapp")
+  criadoEm       DateTime @default(now()) @map("criado_em")
 
   @@map("inscrito")
 }
