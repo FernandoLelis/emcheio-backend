@@ -9,12 +9,13 @@ import { OfertaModule } from './oferta/oferta.module.js';
 import { CupomModule } from './cupom/cupom.module.js';
 import { InscritoModule } from './inscrito/inscrito.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { RecomendoModule } from './recomendo/recomendo.module.js'; // ✅ Importação
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,       // Disponível em toda a aplicação
-      envFilePath: '.env',  // Caminho do arquivo
+      isGlobal: true,
+      envFilePath: '.env',
     }),
     PrismaModule,
     CategoriaModule,
@@ -23,6 +24,7 @@ import { AuthModule } from './auth/auth.module.js';
     CupomModule,
     InscritoModule,
     AuthModule,
+    RecomendoModule, // ✅ Adicionado
   ],
   controllers: [AppController],
   providers: [AppService],
