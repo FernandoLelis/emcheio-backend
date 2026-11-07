@@ -14,7 +14,6 @@ export class CupomService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // Extrai o número e o tipo de desconto do texto
   private extrairDadosDesconto(texto: string | undefined | null) {
     if (!texto) return { valorDesconto: null, tipoDesconto: null };
 
@@ -45,17 +44,24 @@ export class CupomService {
       );
     }
 
-    const { valorDesconto, tipoDesconto } = this.extrairDadosDesconto(createCupomDto.descontoTexto);
+    // ✅ DESESTRUTURANDO O categoriaIds AQUI
+    const { categoriaIds, ...dadosCupom } = createCupomDto;
+    const { valorDesconto, tipoDesconto } = this.extrairDadosDesconto(dadosCupom.descontoTexto);
 
     const cupom = await this.prisma.cupom.create({
       data: {
-        ...createCupomDto,
-        validadeInicio: createCupomDto.validadeInicio ? new Date(createCupomDto.validadeInicio) : null,
-        validadeFim: createCupomDto.validadeFim ? new Date(createCupomDto.validadeFim) : null,
+        ...dadosCupom,
+        validadeInicio: dadosCupom.validadeInicio ? new Date(dadosCupom.validadeInicio) : null,
+        validadeFim: dadosCupom.validadeFim ? new Date(dadosCupom.validadeFim) : null,
         valorDesconto,
         tipoDesconto,
         origem: 'manual',
+        // ✅ CONECTANDO AS CATEGORIAS DA FORMA CORRETA
+        categorias: {
+          connect: categoriaIds?.map((id) => ({ id })) || [],
+        },
       },
+      include: { categorias: true },
     });
 
     this.logger.log(`✅ Cupom criado: ${cupom.codigo} (${cupom.loja})`);
@@ -63,7 +69,10 @@ export class CupomService {
   }
 
   async findAll() {
-    return this.prisma.cupom.findMany({ orderBy: { criadoEm: 'desc' } });
+    return this.prisma.cupom.findMany({
+      include: { categorias: true },
+      orderBy: { criadoEm: 'desc' },
+    });
   }
 
   async findValidos() {
@@ -75,12 +84,16 @@ export class CupomService {
           { OR: [{ validadeFim: null }, { validadeFim: { gte: hoje } }] },
         ],
       },
+      include: { categorias: true },
       orderBy: { criadoEm: 'desc' },
     });
   }
 
   async findOne(id: number) {
-    const cupom = await this.prisma.cupom.findUnique({ where: { id } });
+    const cupom = await this.prisma.cupom.findUnique({
+      where: { id },
+      include: { categorias: true },
+    });
     if (!cupom) throw new NotFoundException(`Cupom com ID ${id} não encontrado`);
     return cupom;
   }
@@ -102,19 +115,27 @@ export class CupomService {
       }
     }
 
+    // ✅ DESESTRUTURANDO TAMBÉM NO UPDATE
+    const { categoriaIds, ...dadosCupom } = updateCupomDto;
+
     let dadosDesconto = {};
-    if (updateCupomDto.descontoTexto) {
-      dadosDesconto = this.extrairDadosDesconto(updateCupomDto.descontoTexto);
+    if (dadosCupom.descontoTexto) {
+      dadosDesconto = this.extrairDadosDesconto(dadosCupom.descontoTexto);
     }
 
     const cupom = await this.prisma.cupom.update({
       where: { id },
       data: {
-        ...updateCupomDto,
-        validadeInicio: updateCupomDto.validadeInicio ? new Date(updateCupomDto.validadeInicio) : undefined,
-        validadeFim: updateCupomDto.validadeFim ? new Date(updateCupomDto.validadeFim) : undefined,
+        ...dadosCupom,
+        validadeInicio: dadosCupom.validadeInicio ? new Date(dadosCupom.validadeInicio) : undefined,
+        validadeFim: dadosCupom.validadeFim ? new Date(dadosCupom.validadeFim) : undefined,
         ...dadosDesconto,
+        // ✅ SE ENVIOU CATEGORIAS NOVAS, O 'set' SUBSTITUI AS ANTIGAS
+        categorias: categoriaIds ? {
+          set: categoriaIds.map((catId) => ({ id: catId })),
+        } : undefined,
       },
+      include: { categorias: true },
     });
 
     this.logger.log(`✏️ Cupom atualizado: ${cupom.codigo} (ID: ${cupom.id})`);
@@ -128,9 +149,7 @@ export class CupomService {
     return { message: `Cupom "${cupom.codigo}" removido com sucesso` };
   }
 
-  // ==========================================
-  // MÉTODO EXCLUSIVO PARA A API DO RECOMENDO
-  // ==========================================
+  // Método do Recomendo mantido...
   async salvarCupomRecomendo(dados: {
     loja: string;
     codigo: string;
@@ -143,7 +162,6 @@ export class CupomService {
       where: { codigo: dados.codigo, loja: dados.loja },
     });
 
-    // Se já existe e foi criado manualmente, não mexemos!
     if (existente && existente.origem === 'manual') {
       return 'ignorado';
     }
@@ -151,7 +169,6 @@ export class CupomService {
     const { valorDesconto, tipoDesconto } = this.extrairDadosDesconto(dados.descontoTexto);
 
     if (existente) {
-      // Atualiza o cupom da API
       await this.prisma.cupom.update({
         where: { id: existente.id },
         data: {
@@ -162,7 +179,6 @@ export class CupomService {
       });
       return 'atualizado';
     } else {
-      // Cria um novo cupom vindo da API
       await this.prisma.cupom.create({
         data: {
           ...dados,
